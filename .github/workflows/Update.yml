@@ -1,0 +1,35 @@
+name: Update
+
+on:
+  push:
+  schedule:
+    - cron: 0 20 * * *
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Step 1 - Checkout
+      uses: actions/checkout@v2
+    - name: Step 2 - Build
+      run: |
+        rm -f Alist
+        wget https://github.com/alist-org/alist/releases/latest/download/alist-linux-amd64.tar.gz
+        tar -zxvf alist-linux-amd64.tar.gz
+        rm -f alist-linux-amd64.tar.gz
+        mv alist Alist
+        rm -f AlistProxy
+        AlistProxy=$(wget -qO- https://api.github.com/repos/alist-org/alist-proxy/releases | grep -o '"tag_name": ".*"' | head -n 1 | sed 's/"//g' | sed 's/tag_name: //g' | sed 's/v//g')
+        wget https://github.com/alist-org/alist-proxy/releases/download/v${AlistProxy}/alist-proxy_${AlistProxy}_linux_amd64.tar.gz
+        tar -zxvf alist-proxy_${AlistProxy}_linux_amd64.tar.gz
+        rm -f LICENSE
+        rm -f README.md
+        rm -f alist-proxy_${AlistProxy}_linux_amd64.tar.gz
+        mv alist-proxy AlistProxy
+        git config --global user.name Moexin
+        git checkout --orphan latest-master
+        git add -A
+        git commit -am "Update"
+        git branch -D main
+        git branch -m main
+        git push -f origin main
